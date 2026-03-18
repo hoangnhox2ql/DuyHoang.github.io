@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bui Duy Hoang — AI Researcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050810;
+      --surface: #0b1120;
+      --surface2: #111827;
+      --border: #1e2d47;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --green: #10b981;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.4;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOW BLOBS ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.18;
+    }
+    .blob-1 { width: 600px; height: 600px; background: var(--accent2); top: -200px; right: -100px; }
+    .blob-2 { width: 500px; height: 500px; background: var(--accent); bottom: -150px; left: -100px; animation: drift 8s ease-in-out infinite alternate; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(40px, -40px); }
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 2; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 999;
+      padding: 1rem 0;
+      background: rgba(5,8,16,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    nav .logo span { color: var(--muted); }
+    nav ul { list-style: none; display: flex; gap: 2rem; }
+    nav ul a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    nav ul a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 8rem 0 5rem;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 4rem; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid rgba(0,229,255,0.2);
+      border-radius: 100px;
+      padding: 0.35rem 1rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero h1 .line2 { color: var(--accent); }
+
+    .hero-intro {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      line-height: 1.7;
+      font-weight: 300;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-links {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.7rem 1.6rem;
+      border-radius: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+    }
+    .btn-primary:hover { background: #33ecff; transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,229,255,0.4); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    /* ── AVATAR CARD ── */
+    .avatar-card {
+      position: relative;
+      animation: fadeUp 0.7s 0.15s ease both;
+    }
+    .avatar-card::before {
+      content: '';
+      position: absolute; inset: -2px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+      border-radius: 20px;
+      z-index: -1;
+      opacity: 0.6;
+      animation: rotateGrad 4s linear infinite;
+    }
+    @keyframes rotateGrad {
+      0%   { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+    .avatar-inner {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .avatar-img {
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent);
+      margin-bottom: 1.2rem;
+    }
+    .avatar-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .avatar-role {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      margin-bottom: 1.2rem;
+    }
+    .avatar-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.8rem; margin-top: 1.2rem;
+    }
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 0.5rem;
+      text-align: center;
+    }
+    .stat-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.2rem;
+      color: var(--accent);
+      font-weight: 700;
+      display: block;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .contact-row {
+      margin-top: 1.2rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .contact-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.78rem; color: var(--muted);
+    }
+    .contact-item svg { flex-shrink: 0; color: var(--accent); }
+    .contact-item a { color: var(--muted); text-decoration: none; }
+    .contact-item a:hover { color: var(--accent); }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 6rem 0; }
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.7rem;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 3rem;
+    }
+    .section-title em { font-style: normal; color: var(--accent); }
+
+    /* ── ABOUT / SKILLS ── */
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: start;
+    }
+    .about-text {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+    .about-text p + p { margin-top: 1rem; }
+
+    .skills-group { margin-bottom: 2rem; }
+    .skills-group-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.8rem;
+      text-transform: uppercase;
+    }
+    .tags {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.35rem 0.8rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0,229,255,0.05);
+    }
+    .tag.accent { border-color: var(--accent2); color: #a78bfa; background: rgba(124,58,237,0.08); }
+
+    /* ── STRENGTHS ── */
+    .strengths-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .strength-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      transition: all 0.25s;
+    }
+    .strength-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,229,255,0.1);
+    }
+    .strength-icon {
+      font-size: 1.5rem; margin-bottom: 0.6rem;
+    }
+    .strength-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* ── PROJECTS ── */
+    .projects-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+    .project-card:hover::before { transform: scaleX(1); }
+    .project-card:hover {
+      border-color: rgba(0,229,255,0.25);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.4);
+    }
+    .project-meta {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0.7rem;
+      margin-bottom: 1rem;
+    }
+    .project-type {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+    }
+    .type-paper  { background: rgba(245,158,11,0.12); color: var(--accent3); border: 1px solid rgba(245,158,11,0.3); }
+    .type-dev    { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+    .type-aiot   { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .project-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .project-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      line-height: 1.3;
+    }
+    .project-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+    .project-bullets {
+      list-style: none;
+      margin-top: 0.8rem;
+      display: flex; flex-direction: column; gap: 0.4rem;
+    }
+    .project-bullets li {
+      color: var(--muted);
+      font-size: 0.88rem;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+    .project-bullets li::before {
+      content: '›';
+      position: absolute; left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .project-highlight {
+      display: inline-block;
+      margin-top: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--green);
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+    }
+
+    /* ── EDUCATION ── */
+    .edu-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      transition: all 0.25s;
+    }
+    .edu-card:hover {
+      border-color: rgba(0,229,255,0.3);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+    .edu-school {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .edu-field {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .edu-years {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .gpa-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+    }
+    .gpa-label { font-size: 0.65rem; color: var(--muted); text-align: right; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    footer p {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .avatar-card { max-width: 340px; margin: 0 auto; }
+      .about-grid { grid-template-columns: 1fr; }
+      .edu-card { grid-template-columns: 1fr; }
+      nav ul { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="inner">
+      <div class="logo"><span>~/</span>hoang.ai</div>
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#education">Education</a></li>
+        <li><a href="mailto:duyhoang.it.2003@gmail.com">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="container">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-badge">Available for Research Collaboration</div>
+          <h1>
+            BUI DUY<br>
+            <span class="line2">HOANG</span>
+          </h1>
+          <p class="hero-intro">
+            AI Researcher specializing in multimodal deep learning, computer vision, and clinical AI.
+            Building intelligent systems that make healthcare more accurate and accessible.
+          </p>
+          <div class="hero-links">
+            <a href="https://github.com/hoangnhox2ql" class="btn btn-primary" target="_blank">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+              GitHub
+            </a>
+            <a href="mailto:duyhoang.it.2003@gmail.com" class="btn btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Email Me
+            </a>
+          </div>
+        </div>
+
+        <!-- AVATAR CARD -->
+        <div class="avatar-card">
+          <div class="avatar-inner">
+            <div style="width:130px;height:130px;border-radius:50%;background:linear-gradient(135deg,#0b1120,#1e2d47);border:3px solid var(--accent);margin:0 auto 1.2rem;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--accent);">BH</div>
+            <div class="avatar-name">Bui Duy Hoang</div>
+            <div class="avatar-role">AI / ML RESEARCHER</div>
+            <div class="contact-row">
+              <div class="contact-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Hanoi, Vietnam
+              </div>
+              <div class="contact-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.09 6.09l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                +84 357 757 617
+              </div>
+              <div class="contact-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+                <a href="https://github.com/hoangnhox2ql" target="_blank">github.com/hoangnhox2ql</a>
+              </div>
+            </div>
+            <div class="avatar-stats">
+              <div class="stat">
+                <span class="stat-val">3</span>
+                <span class="stat-label">Research Papers</span>
+              </div>
+              <div class="stat">
+                <span class="stat-val">3.17</span>
+                <span class="stat-label">GPA</span>
+              </div>
+              <div class="stat">
+                <span class="stat-val">92%</span>
+                <span class="stat-label">VLM Accuracy</span>
+              </div>
+              <div class="stat">
+                <span class="stat-val">82%</span>
+                <span class="stat-label">Tri-modal Acc.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <div class="section-label">/ 01</div>
+      <h2 class="section-title">About <em>&amp; Skills</em></h2>
+      <div class="about-grid">
+        <div>
+          <div class="about-text">
+            <p>I have a solid background in data structures, algorithms, machine learning and deep learning, with hands-on experience in computer vision and NLP.</p>
+            <p>My growing interest in Artificial Intelligence has driven me to explore areas such as machine learning, natural language processing, and graph neural networks.</p>
+            <p>I'm eager to contribute to real-world AI projects, especially those with applications in <strong style="color:var(--text)">healthcare</strong> and <strong style="color:var(--text)">computer vision</strong>, while continuously learning and adapting to new technologies.</p>
+          </div>
+
+          <div style="margin-top:2.5rem;">
+            <div class="section-label" style="margin-bottom:1.5rem;">Strengths</div>
+            <div class="strengths-grid">
+              <div class="strength-card"><div class="strength-icon">💪</div><div class="strength-name">Hard Working</div></div>
+              <div class="strength-card"><div class="strength-icon">🧠</div><div class="strength-name">Algorithmic Thinking</div></div>
+              <div class="strength-card"><div class="strength-icon">🤝</div><div class="strength-name">Team Leadership</div></div>
+              <div class="strength-card"><div class="strength-icon">🔧</div><div class="strength-name">Problem-Solving</div></div>
+              <div class="strength-card"><div class="strength-icon">💬</div><div class="strength-name">Communication</div></div>
+              <div class="strength-card"><div class="strength-icon">🎨</div><div class="strength-name">Creativity</div></div>
+              <div class="strength-card"><div class="strength-icon">🔀</div><div class="strength-name">Adaptability</div></div>
+              <div class="strength-card"><div class="strength-icon">📐</div><div class="strength-name">Discipline</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="skills-group">
+            <div class="skills-group-title">Programming Languages</div>
+            <div class="tags">
+              <span class="tag">Python</span>
+              <span class="tag">Java</span>
+              <span class="tag">C / C++</span>
+              <span class="tag">C#</span>
+            </div>
+          </div>
+          <div class="skills-group">
+            <div class="skills-group-title">AI / ML Frameworks</div>
+            <div class="tags">
+              <span class="tag accent">PyTorch</span>
+              <span class="tag accent">TensorFlow</span>
+              <span class="tag accent">Keras</span>
+              <span class="tag accent">scikit-learn</span>
+              <span class="tag accent">MATLAB</span>
+            </div>
+          </div>
+          <div class="skills-group">
+            <div class="skills-group-title">Databases</div>
+            <div class="tags">
+              <span class="tag">MySQL</span>
+              <span class="tag">SQL Server</span>
+            </div>
+          </div>
+          <div class="skills-group">
+            <div class="skills-group-title">Research Areas</div>
+            <div class="tags">
+              <span class="tag">Computer Vision</span>
+              <span class="tag">NLP</span>
+              <span class="tag">Multimodal Learning</span>
+              <span class="tag">Graph Neural Networks</span>
+              <span class="tag">Clinical AI</span>
+              <span class="tag">VLM</span>
+            </div>
+          </div>
+          <div class="skills-group">
+            <div class="skills-group-title">Tools</div>
+            <div class="tags">
+              <span class="tag">Git / GitHub</span>
+              <span class="tag">MediaPipe</span>
+              <span class="tag">Firebase</span>
+              <span class="tag">Raspberry Pi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="container">
+      <div class="section-label">/ 02</div>
+      <h2 class="section-title">Research &amp; <em>Projects</em></h2>
+
+      <div class="projects-list">
+
+        <!-- AIRC Program -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-dev">RESEARCH PROGRAM</span>
+            <span class="project-date">May 2025 — Present</span>
+          </div>
+          <div class="project-title">AIRC Research Program — Vietnam National University</div>
+          <div class="project-desc">Conducting AI research under the supervision of Associate Professor Dr. Le Hong Son, writing research papers for submission to international conferences.</div>
+          <ul class="project-bullets">
+            <li>Research on healthcare data analysis and smart-classroom systems</li>
+            <li>Developing an AI-integrated application to extract information from invoices</li>
+          </ul>
+        </div>
+
+        <!-- Tri-modal FKG -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-paper">FIRST AUTHOR PAPER</span>
+          </div>
+          <div class="project-title">Multimodal Fuzzy Knowledge Graph Framework for Clinical Diagnosis</div>
+          <div class="project-desc">Integrating Imaging, Signal, and Tabular Data from Symile-MIMIC for the Diagnosis of Pleural Effusion. A novel Tri-modal Fuzzy Knowledge Graph (FKG) architecture integrating frontal chest radiographs (CXR), 12-lead ECG signals, and laboratory analytes.</div>
+          <ul class="project-bullets">
+            <li>Weighted feature fusion mechanism with optimal FKGS sampling algorithm</li>
+            <li>Reduced computational time nearly three-fold while maintaining interpretability</li>
+          </ul>
+          <span class="project-highlight">✦ Peak Accuracy: 82.05% — Pioneering Tri-modal Benchmark on Symile-MIMIC</span>
+        </div>
+
+        <!-- Diabetic Retinopathy -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-paper">FIRST AUTHOR PAPER</span>
+            <span class="project-date">EAI GoodTech Conference</span>
+          </div>
+          <div class="project-title">Adaptive Weight Fusion for Multimodal Diabetic Retinopathy Diagnosis</div>
+          <div class="project-desc">Using Fuzzy Knowledge Graph Structure. A novel diagnostic system that significantly enhances the accuracy of Diabetic Retinopathy detection by intelligently fusing multimodal data — retinal images and clinical tabular data.</div>
+          <ul class="project-bullets">
+            <li>Adaptive Weight Fusion (AWF) method that dynamically calculates feature importance</li>
+            <li>Integrated into Fuzzy Knowledge Graph Structure (FKGS) for interpretable results</li>
+          </ul>
+          <span class="project-highlight">✦ Submitted to EAI GoodTech Conference</span>
+        </div>
+
+        <!-- APCA Invoice -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-dev">REAL-WORLD PROJECT</span>
+            <span class="project-date">APCA Singapore</span>
+          </div>
+          <div class="project-title">AI Model for Key Information Extraction from Invoices</div>
+          <div class="project-desc">Developed a production-ready AI pipeline for APCA Singapore to automatically extract critical fields from invoices using Vision-Language Models.</div>
+          <ul class="project-bullets">
+            <li>Built a comprehensive data pipeline covering acquisition, extraction, and reliability assurance</li>
+            <li>Trained a Vision-Language Model (VLM) for invoice information extraction</li>
+          </ul>
+          <span class="project-highlight">✦ Accuracy Exceeding 92%</span>
+        </div>
+
+        <!-- Dental Plaque -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-paper">CO-AUTHOR PAPER</span>
+          </div>
+          <div class="project-title">Specialized Dataset for Dental Plaque Grading in Orthodontic Patients</div>
+          <div class="project-desc">Curating a specialized medical image dataset and implementing deep learning models for automatic dental plaque severity grading.</div>
+          <ul class="project-bullets">
+            <li>Collecting patient data with systematic image quality control (IQC)</li>
+            <li>Automated algorithm for dental ROI cropping and annotation</li>
+            <li>Deep Learning architecture to grade plaque severity on the newly curated dataset</li>
+          </ul>
+        </div>
+
+        <!-- Sign Language -->
+        <div class="project-card reveal">
+          <div class="project-meta">
+            <span class="project-type type-aiot">AIoT PROJECT</span>
+            <span class="project-date">Jan 2024 — Jun 2024</span>
+          </div>
+          <div class="project-title">AIoT: Recognizing and Learning Sign Language</div>
+          <div class="project-desc">A real-time sign language recognition system using a camera and Raspberry Pi to help people with disabilities communicate more confidently. Users can also learn sign language through videos and a camera.</div>
+          <ul class="project-bullets">
+            <li>64-class dataset collection and analysis</li>
+            <li>MediaPipe keypoint extraction → ST-GCN model for recognition</li>
+            <li>Mobile app with Firebase realtime database; hardware design and integration</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education">
+    <div class="container">
+      <div class="section-label">/ 03</div>
+      <h2 class="section-title">Edu<em>cation</em></h2>
+      <div class="edu-card">
+        <div>
+          <div class="edu-years">2021 — Present</div>
+          <div class="edu-school">Da Nang University of Science and Technology</div>
+          <div class="edu-field">Bachelor of Science — Information Technology</div>
+        </div>
+        <div>
+          <div class="gpa-badge">3.17</div>
+          <div class="gpa-label">GPA / 4.0</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>© 2025 Bui Duy Hoang &nbsp;·&nbsp; <a href="mailto:duyhoang.it.2003@gmail.com">duyhoang.it.2003@gmail.com</a> &nbsp;·&nbsp; <a href="https://github.com/hoangnhox2ql" target="_blank">github.com/hoangnhox2ql</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Stagger strength cards
+    document.querySelectorAll('.strength-card').forEach((card, i) => {
+      card.style.animationDelay = `${i * 0.06}s`;
+    });
+  </script>
+</body>
+</html>
